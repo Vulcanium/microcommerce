@@ -1,14 +1,13 @@
 package com.vulcanium.ecommerce.microcommerce.dao;
 
 import com.vulcanium.ecommerce.microcommerce.model.Product;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-public interface ProductDAO {
-
-    List<Product> findAll();
-
+@Repository
+public interface ProductDAO extends JpaRepository<Product, Integer> {
     Product findById(int id);
-
-    Product save(Product product);
+    List<Product> findByPriceGreaterThan(int priceLimit);
 }

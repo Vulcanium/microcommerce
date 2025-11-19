@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import com.vulcanium.ecommerce.microcommerce.dao.ProductDAO;
 import com.vulcanium.ecommerce.microcommerce.model.Product;
+import com.vulcanium.ecommerce.microcommerce.web.exceptions.ProductNotFoundException;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.json.MappingJacksonValue;
@@ -39,16 +41,18 @@ public class ProductController {
 
     @GetMapping("/products/{id}")
     public Product getProduct(@PathVariable final int id) {
-        return productDAO.findById(id);
+        Product productFound = productDAO.findById(id);
+
+        if (productFound == null) {
+            throw new ProductNotFoundException("The product with id " + id + " cannot be found.");
+        }
+
+        return productFound;
     }
 
     @PostMapping("/products")
-    public ResponseEntity<Product> addProduct(@RequestBody Product product) {
+    public ResponseEntity<Product> addProduct(@Valid @RequestBody Product product) {
         Product productAdded = productDAO.save(product);
-
-        if (productAdded == null) {
-            return ResponseEntity.noContent().build();
-        }
 
         URI resourceLocation = ServletUriComponentsBuilder
                 .fromCurrentRequest()
@@ -57,5 +61,27 @@ public class ProductController {
                 .toUri();
 
         return ResponseEntity.created(resourceLocation).build();
+    }
+
+    @PutMapping("/products")
+    public void updateProduct(@Valid @RequestBody Product product) {
+        productDAO.save(product);
+    }
+
+    @DeleteMapping("/products/{id}")
+    public ResponseEntity<Product> deleteProduct(@PathVariable final int id) {
+        Product productFound = productDAO.findById(id);
+
+        if (productFound == null) {
+            throw new ProductNotFoundException("The product with id " + id + " cannot be found.");
+        }
+
+        productDAO.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("test/products/{priceLimit}")
+    public List<Product> queryTests(@PathVariable int priceLimit) {
+        return productDAO.findByPriceGreaterThan(priceLimit);
     }
 }
